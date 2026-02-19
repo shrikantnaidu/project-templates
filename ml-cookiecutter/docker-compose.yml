@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # MLFLOW TRACKING SERVER
+  # =============================================================================
+  mlflow-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=mlflow
+      - POSTGRES_PASSWORD=mlflow
+      - POSTGRES_DB=mlflow
+    volumes:
+      - mlflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U mlflow" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mlflow-server:
+    image: ghcr.io/mlflow/mlflow:v2.15.1
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=postgresql://mlflow:mlflow@mlflow-db:5432/mlflow
+      - MLFLOW_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - ./mlflow_artifacts:/mlflow/artifacts
+    command: >
+      mlflow server  --backend-store-uri postgresql://mlflow:mlflow@mlflow-db:5432/mlflow --default-artifact-root /mlflow/artifacts --host 0.0.0.0
+    depends_on:
+      mlflow-db:
+        condition: service_healthy
+
+  # =============================================================================
+  # INFERENCE API SERVICE
+  # =============================================================================
+  inference-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mlflow-server
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+
+volumes:
+  mlflow_db_data:
