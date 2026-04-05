@@ -16,9 +16,7 @@ from ml_project.models import evaluate_classification, evaluate_regression, trai
 
 
 class TrainingPipeline:
-    """
-    Trains a model and logs artifacts/metrics to MLflow.
-    """
+    """Trains a model and logs artifacts/metrics to MLflow."""
 
     def __init__(self, experiment_name: str = "default"):
         self.experiment_name = experiment_name
@@ -38,31 +36,35 @@ class TrainingPipeline:
 
         X = data.drop(columns=[target_column])
         y = data[target_column]
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+        stratify = y if task_type == "classification" else None
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+            stratify=stratify,
+        )
 
         with mlflow.start_run() as run:
-            # Log params
             if params:
                 mlflow.log_params(params)
-            
-            # Train
+
             trained_model = train_model(model, X_train, y_train)
-            
-            # Evaluate
+
             y_pred = trained_model.predict(X_test)
             if task_type == "classification":
                 metrics = evaluate_classification(y_test, y_pred)
             else:
                 metrics = evaluate_regression(y_test, y_pred)
-            
+
             mlflow.log_metrics(metrics)
-            
-            # Register Model (MLflow handles persistence)
+
             mlflow.sklearn.log_model(
                 sk_model=trained_model,
                 artifact_path="model",
-                registered_model_name=f"{self.experiment_name}_model"
+                registered_model_name=f"{self.experiment_name}_model",
             )
-            
+
             logger.info(f"Training Pipeline complete. Run ID: {run.info.run_id}")
             return run.info.run_id

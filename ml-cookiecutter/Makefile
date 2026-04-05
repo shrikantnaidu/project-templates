@@ -7,7 +7,7 @@
 # Usage: make <target>
 # =============================================================================
 
-.PHONY: help install install-dev install-all sync lint format test test-cov clean init train serve
+.PHONY: help install install-dev install-all sync lint format test test-cov clean init train predict serve demo-churn
 
 # Default target
 help:
@@ -28,7 +28,9 @@ help:
 	@echo ""
 	@echo "  ML Workflow:"
 	@echo "    make train        - Train model (requires DATA and TARGET)"
+	@echo "    make predict      - Batch prediction (requires DATA and MODEL_URI)"
 	@echo "    make serve        - Start API server"
+	@echo "    make demo-churn   - Prepare Telco churn demo dataset"
 	@echo ""
 	@echo "  Maintenance:"
 	@echo "    make clean        - Remove build artifacts"
@@ -87,6 +89,20 @@ ifndef TARGET
 	$(error TARGET is required. Usage: make train DATA=path/to/data.csv TARGET=column_name)
 endif
 	uv run python -m ml_project.cli train --data $(DATA) --target $(TARGET)
+
+
+# Usage: make predict DATA=processed/churn_features.parquet MODEL_URI=runs:/<run_id>/model
+predict:
+ifndef DATA
+	$(error DATA is required. Usage: make predict DATA=path/to/features.parquet MODEL_URI=runs:/<run_id>/model)
+endif
+ifndef MODEL_URI
+	$(error MODEL_URI is required. Usage: make predict DATA=path/to/features.parquet MODEL_URI=runs:/<run_id>/model)
+endif
+	uv run python -m ml_project.cli predict --data $(DATA) --model-uri $(MODEL_URI)
+
+demo-churn:
+	uv run python -m ml_project.cli prepare-churn-demo
 
 serve:
 	uv run python -m ml_project.cli serve

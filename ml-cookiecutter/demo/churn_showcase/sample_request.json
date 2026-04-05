@@ -1,0 +1,15 @@
+{
+  "features": [
+    {
+      "SeniorCitizen": 0,
+      "tenure": 5,
+      "MonthlyCharges": 70.35,
+      "TotalCharges": 350.72,
+      "gender_Male": 1,
+      "Partner_Yes": 0,
+      "Dependents_Yes": 0,
+      "PhoneService_Yes": 1,
+      "PaperlessBilling_Yes": 1
+    }
+  ]
+}

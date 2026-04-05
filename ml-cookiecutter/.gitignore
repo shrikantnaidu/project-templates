@@ -112,3 +112,7 @@ Thumbs.db
 *.log
 *.tmp
 .cache/
+
+# Keep source package models module
+!src/ml_project/models/
+!src/ml_project/models/**

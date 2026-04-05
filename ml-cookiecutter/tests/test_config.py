@@ -1,10 +1,5 @@
 """Tests for configuration module."""
 
-import os
-from pathlib import Path
-
-import pytest
-
 from ml_project.config import Settings
 
 
@@ -48,7 +43,7 @@ def test_path_resolution():
     assert settings.data_dir.is_absolute()
 
 
-def test_ensure_directories(tmp_path, monkeypatch):
+def test_ensure_directories(tmp_path):
     """Test directory creation."""
     settings = Settings(
         data_dir=tmp_path / "data",

@@ -10,17 +10,13 @@ import mlflow
 import pandas as pd
 from loguru import logger
 
-from ml_project.config import settings
-
 
 class InferencePipeline:
-    """
-    Loads a model and generates predictions.
-    """
+    """Loads a model and generates predictions."""
 
     def __init__(self, model_uri: str | None = None):
         # Default to latest production model if not specified
-        self.model_uri = model_uri or f"models:/default_model/latest"
+        self.model_uri = model_uri or "models:/default_model/latest"
         self._model = None
 
     def _load_model(self):

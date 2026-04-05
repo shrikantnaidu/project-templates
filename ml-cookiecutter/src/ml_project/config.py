@@ -55,6 +55,14 @@ class Settings(BaseSettings):
     wandb_project: str | None = Field(default=None, description="W&B project name")
 
     # =========================================================================
+    # Inference
+    # =========================================================================
+    inference_model_uri: str | None = Field(
+        default=None,
+        description="Default MLflow model URI used by inference services",
+    )
+
+    # =========================================================================
     # API (for serving)
     # =========================================================================
     api_host: str = Field(default="0.0.0.0", description="API host")

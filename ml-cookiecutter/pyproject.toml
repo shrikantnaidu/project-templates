@@ -63,9 +63,11 @@ all = [
 
 [project.scripts]
 # CLI entry points
+ml-feature = "ml_project.cli:feature"
 ml-train = "ml_project.cli:train"
 ml-predict = "ml_project.cli:predict"
 ml-serve = "ml_project.cli:serve"
+ml-demo-churn = "ml_project.cli:prepare_churn_demo"
 
 [build-system]
 requires = ["hatchling"]
