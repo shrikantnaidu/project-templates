@@ -4,16 +4,19 @@ import pandas as pd
 import pytest
 
 from ml_project.features import ColumnSelector, NullFiller, StandardScaler
+from ml_project.pipelines import FeaturePipeline
 
 
 @pytest.fixture
 def sample_df():
     """Sample DataFrame for testing."""
-    return pd.DataFrame({
-        "a": [1.0, 2.0, 3.0, 4.0],
-        "b": [10.0, 20.0, None, 40.0],
-        "c": ["x", "y", "z", "w"],
-    })
+    return pd.DataFrame(
+        {
+            "a": [1.0, 2.0, 3.0, 4.0],
+            "b": [10.0, 20.0, None, 40.0],
+            "c": ["x", "y", "z", "w"],
+        }
+    )
 
 
 class TestColumnSelector:
@@ -52,7 +55,7 @@ class TestStandardScaler:
         # Check mean is approximately 0
         assert abs(result["a"].mean()) < 0.01
         # Check std is approximately 1
-        assert abs(result["a"].std() - 1.0) < 0.1
+        assert abs(result["a"].std(ddof=0) - 1.0) < 0.1
 
     def test_inverse_transform(self):
         df = pd.DataFrame({"a": [0.0, 10.0, 20.0, 30.0]})
@@ -63,3 +66,18 @@ class TestStandardScaler:
         # Should be close to original
         for i in range(len(df)):
             assert abs(restored["a"].iloc[i] - df["a"].iloc[i]) < 0.01
+
+
+def test_feature_pipeline_transforms_feature_columns(sample_df):
+    pipeline = FeaturePipeline(
+        processors=[NullFiller(strategy="mean"), StandardScaler()]
+    )
+    result = pipeline.fit_transform(sample_df.drop(columns=["c"]))
+
+    assert result["a"].mean() == pytest.approx(0.0)
+    assert result["b"].isna().sum() == 0
+
+
+def test_feature_processor_requires_fit(sample_df):
+    with pytest.raises(RuntimeError, match="must be fitted"):
+        StandardScaler(columns=["a"]).transform(sample_df)

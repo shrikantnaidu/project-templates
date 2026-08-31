@@ -34,10 +34,9 @@ deep-learning = [
     "lightning>=2.3",
 ]
 
-# Experiment tracking & Registry
+# Optional experiment integrations. MLflow is part of the core workflow.
 tracking = [
-    "mlflow>=2.15",
-    "psycopg2-binary>=2.9",
+    "wandb>=0.17",
 ]
 
 # API serving
@@ -58,7 +57,17 @@ dev = [
 
 # All optional dependencies
 all = [
-    "ml-project[deep-learning,tracking,api,dev]",
+    "torch>=2.3",
+    "lightning>=2.3",
+    "wandb>=0.17",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "ipykernel>=6.29",
 ]
 
 [project.scripts]

@@ -19,9 +19,12 @@ class InferencePipeline:
     """
 
     def __init__(self, model_uri: str | None = None):
-        # Default to latest production model if not specified
-        self.model_uri = model_uri or f"models:/default_model/latest"
+        # The model name and alias are configurable for each deployment.
+        self.model_uri = model_uri or (
+            f"models:/{settings.model_name}@{settings.model_alias}"
+        )
         self._model = None
+        mlflow.set_tracking_uri(settings.mlflow_tracking_uri or "./mlruns")
 
     def _load_model(self):
         if self._model is None:

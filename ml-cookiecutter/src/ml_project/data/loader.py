@@ -17,7 +17,7 @@ def load_csv(
     path: Path | str,
     use_polars: bool = False,
     **kwargs: Any,
-) -> pd.DataFrame:
+) -> Any:
     """
     Load a CSV file as a DataFrame.
 
@@ -45,7 +45,7 @@ def load_csv(
 
 
 def save_csv(
-    df: pd.DataFrame,
+    df: Any,
     path: Path | str,
     use_polars: bool = False,
     **kwargs: Any,
@@ -84,7 +84,7 @@ def load_parquet(
     path: Path | str,
     use_polars: bool = False,
     **kwargs: Any,
-) -> pd.DataFrame:
+) -> Any:
     """
     Load a Parquet file as a DataFrame.
 
@@ -111,7 +111,7 @@ def load_parquet(
 
 
 def save_parquet(
-    df: pd.DataFrame,
+    df: Any,
     path: Path | str,
     use_polars: bool = False,
     **kwargs: Any,

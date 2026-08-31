@@ -10,7 +10,8 @@ A modern, self-contained machine learning project template using the latest Pyth
 - **🔧 Ruff** - Ultra-fast linting and formatting (replaces flake8, black, isort)
 - **🧪 Pytest** - Modern testing with coverage
 - **🌐 FastAPI** - Optional REST API for model serving
-- **📊 Optional MLflow/W&B** - Experiment tracking when needed
+- **📊 MLflow tracking** - Experiment tracking and model registration
+- **📈 Optional W&B integration** - Add-on experiment visualization
 
 ## 📁 Project Structure
 
@@ -60,8 +61,8 @@ cd your-project
 # Install dependencies (creates .venv automatically)
 uv sync
 
-# Or with development tools
-uv sync --extra dev
+# For local development and API serving
+uv sync --extra dev --extra api
 
 # Or with all optional dependencies
 uv sync --all-extras
@@ -82,11 +83,14 @@ cp .env.example .env
 # Show project info
 uv run python -m ml_project.cli info
 
-# Train a model
+# Build features while preserving the target column
+uv run python -m ml_project.cli feature --data raw/train.csv --target label
+
+# Train a model directly from raw data
 uv run python -m ml_project.cli train --data raw/train.csv --target label
 
 # Make predictions
-uv run python -m ml_project.cli predict --data raw/test.csv --model model
+uv run python -m ml_project.cli predict --data raw/test.csv --model models:/default_model@latest
 
 # Serve model as API
 uv run python -m ml_project.cli serve
@@ -102,7 +106,9 @@ make lint          # Run linter
 make format        # Format code
 make test          # Run tests
 make test-cov      # Run tests with coverage
+make feature DATA=raw/train.csv TARGET=label
 make train DATA=raw/train.csv TARGET=label
+make predict DATA=raw/test.csv MODEL=models:/default_model@latest
 make serve
 ```
 
@@ -111,25 +117,23 @@ make serve
 ```python
 from sklearn.ensemble import RandomForestClassifier
 
-from ml_project.pipelines import MLPipeline, PipelineConfig
+from ml_project.data import load_csv
 from ml_project.features import StandardScaler, NullFiller
+from ml_project.pipelines import FeaturePipeline, TrainingPipeline
 
-# Configure pipeline
-config = PipelineConfig(
-    data_path="raw/train.csv",
+data = load_csv("raw/train.csv")
+features = FeaturePipeline([
+    NullFiller(strategy="mean"),
+    StandardScaler(),
+])
+trainer = TrainingPipeline(experiment_name="default")
+run_id = trainer.run(
+    data=data,
     target_column="target",
-    model_name="my_model",
+    model=RandomForestClassifier(n_estimators=100, random_state=42),
+    feature_pipeline=features,
 )
-
-# Build and run pipeline
-pipeline = MLPipeline(config)
-pipeline.add_processor(NullFiller(strategy="mean"))
-pipeline.add_processor(StandardScaler())
-
-result = pipeline.run(RandomForestClassifier(n_estimators=100))
-
-print(f"Accuracy: {result.metrics['accuracy']:.4f}")
-print(f"Model saved to: {result.model_path}")
+print(f"MLflow run: {run_id}")
 ```
 
 ## 🔧 Configuration
@@ -145,6 +149,8 @@ Settings are loaded from environment variables or `.env` file:
 | `LOG_LEVEL` | INFO | Logging level |
 | `API_HOST` | 0.0.0.0 | API host |
 | `API_PORT` | 8000 | API port |
+| `MODEL_NAME` | default_model | MLflow registered model |
+| `MODEL_ALIAS` | latest | MLflow model alias/version |
 
 ## 🧪 Development
 
@@ -176,7 +182,7 @@ Install extras as needed:
 # Deep learning (PyTorch + Lightning)
 uv sync --extra deep-learning
 
-# Experiment tracking (MLflow + W&B)
+# Optional W&B integration (MLflow is included in the core install)
 uv sync --extra tracking
 
 # API serving (FastAPI + Uvicorn)
@@ -201,7 +207,7 @@ COPY pyproject.toml uv.lock ./
 COPY src ./src
 
 # Install dependencies
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --extra api
 
 # Run
 CMD ["uv", "run", "python", "-m", "ml_project.cli", "serve"]

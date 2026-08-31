@@ -7,18 +7,22 @@ import pytest
 @pytest.fixture
 def sample_classification_data():
     """Sample classification dataset."""
-    return pd.DataFrame({
-        "feature_1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-        "feature_2": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
-        "target": [0, 0, 0, 0, 1, 1, 1, 1],
-    })
+    return pd.DataFrame(
+        {
+            "feature_1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            "feature_2": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+            "target": [0, 0, 0, 0, 1, 1, 1, 1],
+        }
+    )
 
 
 @pytest.fixture
 def sample_regression_data():
     """Sample regression dataset."""
-    return pd.DataFrame({
-        "feature_1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-        "feature_2": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
-        "target": [1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8],
-    })
+    return pd.DataFrame(
+        {
+            "feature_1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            "feature_2": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+            "target": [1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8],
+        }
+    )

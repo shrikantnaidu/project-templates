@@ -9,11 +9,11 @@ from typing import Any
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from loguru import logger
+from pydantic import BaseModel, Field
 
 from ml_project import __version__
 from ml_project.pipelines import InferencePipeline
-
 
 # Global pipeline instance
 _inference_pipeline: InferencePipeline | None = None
@@ -39,19 +39,19 @@ app = FastAPI(
 
 class PredictionRequest(BaseModel):
     """Request body for predictions."""
-    features: list[dict[str, Any]]  # List of records
+
+    features: list[dict[str, Any]] = Field(min_length=1)  # List of records
 
     model_config = {
         "json_schema_extra": {
-            "example": {
-                "features": [{"feature_1": 1.0, "feature_2": 2.0}]
-            }
+            "example": {"features": [{"feature_1": 1.0, "feature_2": 2.0}]}
         }
     }
 
 
 class PredictionResponse(BaseModel):
     """Response body for predictions."""
+
     predictions: list[Any]
 
 
@@ -71,5 +71,8 @@ async def predict(request: PredictionRequest) -> PredictionResponse:
         df = pd.DataFrame(request.features)
         predictions = _inference_pipeline.predict(df)
         return PredictionResponse(predictions=predictions.tolist())
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Prediction failed")
+        raise HTTPException(status_code=500, detail="Prediction failed") from exc

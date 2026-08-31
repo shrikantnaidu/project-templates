@@ -23,78 +23,122 @@ console = Console()
 def feature(
     data_path: str = typer.Option(
         "raw/train.csv",
-        "--data", "-d",
+        "--data",
+        "-d",
         help="Path to raw training data",
     ),
     output: str = typer.Option(
         "features.parquet",
-        "--output", "-o",
+        "--output",
+        "-o",
         help="Path for processed features",
+    ),
+    target: str | None = typer.Option(
+        None,
+        "--target",
+        "-t",
+        help="Target column to preserve without transforming",
     ),
 ) -> None:
     """Run the Feature Pipeline."""
-    from ml_project.pipelines import FeaturePipeline
     from ml_project.features import NullFiller, StandardScaler
+    from ml_project.pipelines import FeaturePipeline
 
-    console.print(f"[bold blue]Running Feature Pipeline...[/]")
-    
+    console.print("[bold blue]Running Feature Pipeline...[/]")
+
     # Example configuration
-    pipeline = FeaturePipeline(processors=[
-        NullFiller(strategy="mean"),
-        StandardScaler()
-    ])
-    
-    path = pipeline.run(data_path, output_name=output)
+    pipeline = FeaturePipeline(
+        processors=[NullFiller(strategy="mean"), StandardScaler()]
+    )
+
+    path = pipeline.run(data_path, output_name=output, target_column=target)
     console.print(f"[green]✓[/] Features saved to: {path}")
 
 
 @app.command()
 def train(
     data_path: str = typer.Option(
-        "processed/features.parquet",
-        "--data", "-d",
-        help="Path to processed features",
+        "raw/train.csv",
+        "--data",
+        "-d",
+        help="Path to raw training data",
     ),
     target: str = typer.Option(
         ...,
-        "--target", "-t",
+        "--target",
+        "-t",
         help="Target column name",
     ),
     experiment: str = typer.Option(
         "default",
-        "--experiment", "-e",
+        "--experiment",
+        "-e",
         help="MLflow experiment name",
     ),
 ) -> None:
     """Run the Training Pipeline."""
     from sklearn.ensemble import RandomForestClassifier
-    from ml_project.data import load_parquet
-    from ml_project.pipelines import TrainingPipeline
 
-    console.print(f"[bold blue]Running Training Pipeline...[/]")
-    
-    data = load_parquet(data_path)
+    from ml_project.data import load_csv
+    from ml_project.features import NullFiller, StandardScaler
+    from ml_project.pipelines import FeaturePipeline, TrainingPipeline
+
+    console.print("[bold blue]Running Training Pipeline...[/]")
+
+    data = load_csv(data_path)
     pipeline = TrainingPipeline(experiment_name=experiment)
-    
+    feature_pipeline = FeaturePipeline(
+        processors=[NullFiller(strategy="mean"), StandardScaler()]
+    )
+
     run_id = pipeline.run(
         data=data,
         target_column=target,
-        model=RandomForestClassifier(n_estimators=100),
-        params={"n_estimators": 100, "random_state": 42}
+        model=RandomForestClassifier(n_estimators=100, random_state=42),
+        params={"n_estimators": 100, "random_state": 42},
+        feature_pipeline=feature_pipeline,
     )
-    
+
     console.print(f"[green]✓[/] Training complete. Run ID: [bold]{run_id}[/]")
 
 
 @app.command()
+def predict(
+    data_path: str = typer.Option(
+        "raw/test.csv",
+        "--data",
+        "-d",
+        help="Path to prediction data",
+    ),
+    model_uri: str = typer.Option(
+        "",
+        "--model",
+        "-m",
+        help="MLflow model URI; defaults to the configured model and alias",
+    ),
+) -> None:
+    """Generate predictions from a registered model."""
+    from ml_project.data import load_csv
+    from ml_project.pipelines import InferencePipeline
+
+    console.print("[bold blue]Running Inference Pipeline...[/]")
+    data = load_csv(data_path)
+    predictions = InferencePipeline(model_uri=model_uri or None).predict(data)
+    for prediction in predictions:
+        console.print(prediction)
+
+
+@app.command()
 def serve(
-    host: str = typer.Option("0.0.0.0", "--host", "-h"),
-    port: int = typer.Option(8000, "--port", "-p"),
+    host: str = typer.Option(settings.api_host, "--host", "-h"),
+    port: int = typer.Option(settings.api_port, "--port", "-p"),
+    reload: bool = typer.Option(False, "--reload/--no-reload"),
 ) -> None:
     """Start the Inference Layer (FastAPI)."""
     import uvicorn
+
     console.print(f"[bold blue]Starting Inference API on {host}:{port}[/]")
-    uvicorn.run("ml_project.api:app", host=host, port=port, reload=True)
+    uvicorn.run("ml_project.api:app", host=host, port=port, reload=reload)
 
 
 @app.command()
@@ -106,7 +150,8 @@ def info() -> None:
 
     table.add_row("Version", __version__)
     table.add_row("Environment", settings.environment)
-    table.add_row("MLflow URI", settings.mlflow_tracking_uri or "Default")
+    table.add_row("MLflow URI", settings.mlflow_tracking_uri or "./mlruns")
+    table.add_row("Model", f"{settings.model_name} ({settings.model_alias})")
     table.add_row("Data Directory", str(settings.data_dir))
 
     console.print(table)

@@ -7,7 +7,7 @@
 # Usage: make <target>
 # =============================================================================
 
-.PHONY: help install install-dev install-all sync lint format test test-cov clean init train serve
+.PHONY: help install install-dev install-all sync lint format type-check test test-cov clean init feature train predict serve
 
 # Default target
 help:
@@ -25,9 +25,12 @@ help:
 	@echo "    make format       - Format code (ruff)"
 	@echo "    make test         - Run tests"
 	@echo "    make test-cov     - Run tests with coverage"
+	@echo "    make type-check   - Run mypy"
 	@echo ""
 	@echo "  ML Workflow:"
+	@echo "    make feature DATA=path/to/data.csv [TARGET=column]"
 	@echo "    make train        - Train model (requires DATA and TARGET)"
+	@echo "    make predict      - Generate predictions (requires DATA)"
 	@echo "    make serve        - Start API server"
 	@echo ""
 	@echo "  Maintenance:"
@@ -78,6 +81,13 @@ test-cov:
 # ML Workflow Commands
 # =============================================================================
 
+# Usage: make feature DATA=raw/train.csv TARGET=label
+feature:
+ifndef DATA
+	$(error DATA is required. Usage: make feature DATA=path/to/data.csv [TARGET=column])
+endif
+	uv run python -m ml_project.cli feature --data $(DATA) $(if $(TARGET),--target $(TARGET),)
+
 # Usage: make train DATA=raw/train.csv TARGET=label
 train:
 ifndef DATA
@@ -87,6 +97,13 @@ ifndef TARGET
 	$(error TARGET is required. Usage: make train DATA=path/to/data.csv TARGET=column_name)
 endif
 	uv run python -m ml_project.cli train --data $(DATA) --target $(TARGET)
+
+# Usage: make predict DATA=raw/test.csv [MODEL=models:/default_model@latest]
+predict:
+ifndef DATA
+	$(error DATA is required. Usage: make predict DATA=path/to/data.csv [MODEL=model-uri])
+endif
+	uv run python -m ml_project.cli predict --data $(DATA) $(if $(MODEL),--model $(MODEL),)
 
 serve:
 	uv run python -m ml_project.cli serve

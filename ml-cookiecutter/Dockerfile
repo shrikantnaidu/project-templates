@@ -10,9 +10,10 @@ WORKDIR /app
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install dependencies
+# Install dependencies from the committed lockfile.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --extra api --extra tracking
+COPY src ./src
+RUN uv sync --frozen --no-dev --extra api
 
 # Runtime stage
 FROM python:3.11-slim
@@ -23,9 +24,8 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy source code
+# Copy source code.
 COPY src ./src
-COPY .env .env
 
 # Expose port
 EXPOSE 8000

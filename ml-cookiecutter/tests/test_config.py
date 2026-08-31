@@ -1,10 +1,5 @@
 """Tests for configuration module."""
 
-import os
-from pathlib import Path
-
-import pytest
-
 from ml_project.config import Settings
 
 
@@ -14,6 +9,8 @@ def test_settings_defaults():
     assert settings.project_name == "ml-project"
     assert settings.environment == "development"
     assert settings.log_level == "INFO"
+    assert settings.model_name == "default_model"
+    assert settings.model_alias == "latest"
 
 
 def test_settings_from_env(monkeypatch):

@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     environment: Literal["development", "staging", "production"] = Field(
         default="development", description="Deployment environment"
     )
+    model_name: str = Field(
+        default="default_model", description="Registered model name"
+    )
+    model_alias: str = Field(default="latest", description="Model Registry alias")
 
     # =========================================================================
     # Paths
